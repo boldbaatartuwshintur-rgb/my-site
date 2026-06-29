@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Япон Хэлний Үг Цээжлэх Апп (JLPT N2 - 153 Үг)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome дүрснүүд -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Картыг 3D хэмжээстэй эргүүлэх (Flip) хөдөлгөөний CSS тохиргоо */
+        .card-container {
+            perspective: 1000px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        .card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 1rem;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="bg-[#121212] text-white font-sans min-h-screen flex items-center justify-center p-4">
+
+    <!-- Үндсэн Аппликейшн Контейнер -->
+    <div class="w-full max-w-2xl bg-[#1e1e1e] rounded-2xl p-6 shadow-2xl border border-[#2d2d2d]">
+        
+        <!-- Дээд хэсгийн Табууд (Navigation Tabs) -->
+        <div class="grid grid-cols-3 gap-2 mb-6">
+            <button id="tab-flashcard" onclick="switchTab('flashcard')" class="py-2.5 px-4 rounded-xl text-lg font-medium border border-[#333333] bg-[#222222] hover:bg-[#2a2a2a] transition duration-200 text-white relative">
+                Flashcard
+                <div id="active-indicator" class="absolute bottom-1 left-4 right-4 h-0.5 bg-blue-500 rounded-full"></div>
+            </button>
+            <button id="tab-quiz" onclick="switchTab('quiz')" class="py-2.5 px-4 rounded-xl text-lg font-medium border border-[#333333] bg-[#1a1a1a] text-gray-400 hover:bg-[#222222] hover:text-white transition duration-200">
+                Quiz
+            </button>
+            <button id="tab-progress" onclick="switchTab('progress')" class="py-2.5 px-4 rounded-xl text-lg font-medium border border-[#333333] bg-[#1a1a1a] text-gray-400 hover:bg-[#222222] hover:text-white transition duration-200">
+                Явц
+            </button>
+        </div>
+
+        <!-- ================= FLASHCARD ХЭСЭГ ================= -->
+        <div id="section-flashcard" class="space-y-6">
+            
+            <!-- Үг хайх болон шүүх хэсэг -->
+            <div class="flex flex-col sm:flex-row gap-2">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" id="search-input" oninput="filterWords()" placeholder="Үг хайх (Ханз, дуудлага, орчуулга...)" class="w-full pl-9 pr-4 py-2 bg-[#262626] border border-[#383838] rounded-xl text-sm focus:outline-none focus:border-blue-500 text-white">
+                </div>
+                <select id="category-filter" onchange="filterWords()" class="bg-[#262626] border border-[#383838] rounded-xl px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-blue-500">
+                    <option value="all">Бүх ангилал</option>
+                    <option value="үйл үг">Үйл үг</option>
+                    <option value="нэр үг">Нэр үг</option>
+                    <option value="тэмдэг нэр">Тэмдэг нэр</option>
+                    <option value="дайвар үг">Дайвар үг</option>
+                    <option value="бусад">Бусад</option>
+                </select>
+            </div>
+
+            <!-- Үгийн дугаар харуулах явц -->
+            <div class="flex justify-between items-center text-xs text-gray-400">
+                <span id="word-counter">Үг: 1 / 153</span>
+                <span class="bg-[#2a2a2a] px-2 py-1 rounded-md text-blue-400 font-mono" id="current-word-status">Суралцаж буй</span>
+            </div>
+
+            <!-- Эргэдэг Карт -->
+            <div class="card-container h-80 w-full">
+                <div id="flashcard" class="card-inner" onclick="flipCard()">
+                    <!-- Картын нүүр тал (Япон үг) -->
+                    <div class="card-front bg-[#262626] border border-[#333333] p-6 text-center select-none">
+                        <span id="word-tag" class="bg-blue-950/80 text-blue-400 text-sm font-semibold px-3 py-1 rounded-full mb-6 border border-blue-800 border-opacity-40">JLPT N2</span>
+                        <h1 id="word-kanji" class="text-4xl md:text-5xl font-bold tracking-wide mb-3">遭う</h1>
+                        <p id="word-kana" class="text-xl text-gray-400 mb-8">あう</p>
+                        <p class="text-gray-500 text-sm flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-left-right"></i> дарж утгыг харах
+                        </p>
+                    </div>
+                    <!-- Картын ар тал (Монгол орчуулга) -->
+                    <div class="card-back bg-[#1d2d24] border border-green-800 p-6 text-center select-none">
+                        <span class="text-green-400 text-sm font-semibold uppercase tracking-wider mb-6">Орчуулга</span>
+                        <h2 id="word-translation" class="text-2xl font-bold mb-4 text-green-200">таарах, өртөх (осол гамшигт)</h2>
+                        <p id="word-example" class="text-gray-300 text-base italic max-w-md">事故に遭う (Осолд өртөх)</p>
+                        <p class="text-green-500 text-sm mt-8">Буцааж эргүүлэх бол дарна уу</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Удирдах товчлуурууд - Эгнээ 1 -->
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="prevWord()" class="py-3 px-4 rounded-xl border border-[#383838] bg-[#222222] hover:bg-[#2c2c2c] transition font-medium flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i> Өмнөх
+                </button>
+                <button onclick="shuffleWords()" class="py-3 px-4 rounded-xl border border-[#383838] bg-[#222222] hover:bg-[#2c2c2c] transition font-medium flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-shuffle text-blue-400"></i> Холих
+                </button>
+                <button onclick="nextWord()" class="py-3 px-4 rounded-xl border border-[#383838] bg-[#222222] hover:bg-[#2c2c2c] transition font-medium flex items-center justify-center gap-2">
+                    Дараах <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- Үнэлгээний товчлуурууд - Эгнээ 2 -->
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="markAsUnknown()" class="py-3 px-4 rounded-xl border border-red-900/50 bg-[#2d1c1c] hover:bg-[#3d2424] text-red-300 transition font-medium flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-xmark"></i> Мэдэхгүй
+                </button>
+                <button onclick="skipWord()" class="py-3 px-4 rounded-xl border border-[#383838] bg-[#222222] hover:bg-[#2c2c2c] text-gray-400 transition font-medium">
+                    Алгасах
+                </button>
+                <button onclick="markAsKnown()" class="py-3 px-4 rounded-xl border border-green-900/50 bg-[#1c2d20] hover:bg-[#243d2a] text-green-300 transition font-medium flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i> Мэднэ
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= QUIZ ХЭСЭГ ================= -->
+        <div id="section-quiz" class="space-y-6 hidden">
+            <div class="bg-[#222222] p-6 rounded-xl border border-[#333333] text-center">
+                <p class="text-gray-400 text-sm mb-2" id="quiz-progress">Асуулт 1 / 5</p>
+                <h1 id="quiz-question" class="text-4xl font-bold mb-2">確認する</h1>
+                <p id="quiz-reading" class="text-lg text-gray-400">かくにんする</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3" id="quiz-options">
+                <!-- Сонголтууд энд автоматаар үүснэ -->
+            </div>
+
+            <div class="flex justify-between items-center pt-2">
+                <p class="text-gray-400" id="quiz-score">Оноо: 0</p>
+                <button onclick="resetQuiz()" class="py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-sm font-medium">
+                    Шинээр эхлэх
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= ЯВЦ ХЭСЭГ ================= -->
+        <div id="section-progress" class="space-y-6 hidden">
+            <h3 class="text-xl font-bold border-b border-[#333333] pb-3">Миний суралцсан явц</h3>
+            
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-[#222222] p-4 rounded-xl border border-[#333333] text-center">
+                    <p class="text-2xl font-bold text-blue-400" id="stats-total">0</p>
+                    <p class="text-xs text-gray-400 mt-1">Нийт үгс</p>
+                </div>
+                <div class="bg-[#1c2d20] p-4 rounded-xl border border-green-900/40 text-center">
+                    <p class="text-2xl font-bold text-green-400" id="stats-known">0</p>
+                    <p class="text-xs text-green-300 mt-1">Мэддэг</p>
+                </div>
+                <div class="bg-[#2d1c1c] p-4 rounded-xl border border-red-900/40 text-center">
+                    <p class="text-2xl font-bold text-red-400" id="stats-unknown">0</p>
+                    <p class="text-xs text-red-300 mt-1">Мэдэхгүй</p>
+                </div>
+            </div>
+
+            <!-- Сургалтын явцын хувь -->
+            <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Цээжлэлтийн хувь</span>
+                    <span class="font-bold text-green-400" id="progress-percent">0%</span>
+                </div>
+                <div class="w-full bg-[#333333] rounded-full h-3 overflow-hidden">
+                    <div id="progress-bar-fill" class="bg-green-500 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button onclick="clearProgress()" class="text-sm text-red-400 hover:text-red-300 flex items-center gap-1 transition">
+                    <i class="fa-solid fa-trash"></i> Бүх явцыг устгах
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Тоглоомын логик ба Үгсийн сан -->
+    <script>
+        // =========================================================
+        // 🌟 JLPT N2 БҮХ 153 ҮГСИЙН САН (Орчуулгатай) 🌟
+        // =========================================================
+        const defaultWords = [
+            { kanji: "遭う", kana: "あう", translation: "таарах, өртөх (осол гамшигт)", tag: "үйл үг", example: "事故に遭う (Осолд өртөх)" },
+            { kanji: "扇ぐ", kana: "あおぐ", translation: "сэвэх, сэнсдэх", tag: "үйл үг", example: "扇子で扇ぐ (Сэнсээр сэвэх)" },
+            { kanji: "青白い", kana: "あおじろい", translation: "цонхигор, цاحвар цагаан", tag: "тэмдэг нэр", example: "青白い顔 (Цонхигор царай)" },
+            { kanji: "明き", kana: "あき", translation: "сул зай, чөлөөт цаг, хоосон чанар", tag: "нэр үг", example: "部屋の明き (Өрөөний сул зай)" },
+            { kanji: "飽くまで", kana: "あくまで", translation: "эцсийг нь хүртэл, тууштай", tag: "дайвар үг", example: "あくまで追求する (Эцсийг нь хүртэл хөөцөлдөх)" },
+            { kanji: "明け方", kana: "あけがた", translation: "үүрийн гэгээ, үүр цайх үе", tag: "нэр үг", example: "明け方に目が覚める (Үүрээр сэрэх)" },
+            { kanji: "揚げる", kana: "あげる", translation: "тосонд шарах, хайрах", tag: "үйл үг", example: "魚を揚げる (Загас тосонд шарах)" },
+            { kanji: "挙げる", kana: "あげる", translation: "дээш өргөх, жишээ татах", tag: "үйл үг", example: "手を挙げる (Гараа өргөх)" },
+            { kanji: "憧れる", kana: "あこがれる", translation: "мөрөөдөх, бишрэх, тэмүүлэх", tag: "үйл үг", example: "都会に憧れる (Хотын амьдралыг мөрөөдөх)" },
+            { kanji: "足跡", kana: "あしあと", translation: "хөлийн мөр", tag: "нэр үг", example: "雪の上の足跡 (Цасан дээрх хөлийн мөр)" },
+            { kanji: "味わう", kana: "あじわう", translation: "амтлах, мэдрэх, таашаах", tag: "үйл үг", example: "料理を味わう (Хоолыг амтлах)" },
+            { kanji: "預かる", kana: "あずかる", translation: "хадгалах, түр харах, хариуцах", tag: "үйл үг", example: "荷物を預かる (Ачаа хадгалах)" },
+            { kanji: "暖まる", kana: "あたたまる", translation: "дулаацах, дулаан болох", tag: "үйл үг", example: "部屋が暖まる (Өрөө дулаацах)" },
+            { kanji: "暖める", kana: "あたためる", translation: "дулаацуулах, халаах", tag: "үйл үг", example: "スープを暖める (Шөлийг халаах)" },
+            { kanji: "厚かましい", kana: "あつかましい", translation: "ичгүүргүй, улаан хацартай", tag: "тэмдэг нэр", example: "厚かましい人 (Ичгүүргүй хүн)" },
+            { kanji: "圧縮", kana: "あっしゅく", translation: "шахалт, нягтаршил", tag: "нэр үг", example: "データの圧縮 (Мэдээллийн шахалт)" },
+            { kanji: "宛名", kana: "あてな", translation: "хүлээн авагчийн хаяг, нэр", tag: "нэр үг", example: "手紙の宛名 (Захидлын хаяг)" },
+            { kanji: "暴れる", kana: "あばれる", translation: "догшин авирлах, тийчлэх", tag: "үйл үг", example: "酔っ払いが暴れる (Согтуу хүн догшин авирлах)" },
+            { kanji: "脂", kana: "あぶら", translation: "өөх тос, малын тос", tag: "нэр үг", example: "肉の脂 (Махны өөх)" },
+            { kanji: "雨戸", kana: "あまど", translation: "хамгаалалтын хаалт (шуурганаас хамгаалах)", tag: "нэр үг", example: "雨戸を閉める (Хамгаалалтын хаалт хаах)" },
+            { kanji: "甘やかす", kana: "あまやかす", translation: "эрхлүүлэх, толгой дээрээ гаргах", tag: "үйл үг", example: "子供を甘やかす (Хүүхдийг эрхлүүлэх)" },
+            { kanji: "余る", kana: "あまる", translation: "илүүдэх, үлдэх", tag: "үйл үг", example: "時間が余る (Цаг илүүдэх)" },
+            { kanji: "編物", kana: "あみもの", translation: "нэхмэл эдлэл, нэхэх урлаг", tag: "нэр үг", example: "編物をする (Юм нэхэх)" },
+            { kanji: "編む", kana: "あむ", translation: "нэхэх, сүлжих", tag: "үйл үг", example: "セーターを編む (Цамц нэхэх)" },
+            { kanji: "危うい", kana: "あやうい", translation: "аюултай, эргэлзээтэй, найдваргүй", tag: "тэмдэг нэр", example: "命が危うい (Амь нас нь аюулд орох)" },
+            { kanji: "怪しい", kana: "あやしい", translation: "сэжигтэй, хачин", tag: "тэмдэг нэр", example: "怪しい人物 (Сэжигтэй хүн)" },
+            { kanji: "荒い", kana: "あらい", translation: "ширүүн, догшин", tag: "тэмдэг нэр", example: "波が荒い (Давалгаа ширүүн)" },
+            { kanji: "粗い", kana: "あらい", translation: "ширхэг нь том, бүдүүн", tag: "тэмдэг нэр", example: "目が粗いネット (Том нүхтэй тор)" },
+            { kanji: "争う", kana: "あらそう", translation: "маргалдах, өрсөлдөх", tag: "үйл үг", example: "勝敗を争う (Ялалтын төлөө өрсөлдөх)" },
+            { kanji: "改めて", kana: "あらためて", translation: "дахиж, шинээр, дараа өөр цагт", tag: "дайвар үг", example: "改めて説明する (Дахин тайлбарлах)" },
+            { kanji: "改める", kana: "あらためる", translation: "засах, сайжруулах, шинэчлэх", tag: "үйл үг", example: "規則を改める (Дүрмийг шинэчлэх)" },
+            { kanji: "著す", kana: "あらわす", translation: "зохиох, бичих, хэвлүүлэх", tag: "үйл үг", example: "本を著す (Ном хэвлүүлэх)" },
+            { kanji: "有難い", kana: "ありがたい", translation: "талархууштай, ач тустай", tag: "тэмдэг нэр", example: "有難いお言葉 (Талархууштай үг)" },
+            { kanji: "在る", kana: "ある", translation: "байх, орших", tag: "үйл үг", example: "真実は一つに在る (Үнэн ганц л байдаг)" },
+            { kanji: "安易", kana: "あんい", translation: "амархан, хөнгөмсөг, хялбарчлах", tag: "тэмдэг нэр", example: "安易な選択 (Хялбар сонголт)" },
+            { kanji: "案外", kana: "あんがい", translation: "бодсоноос өөрөөр, санаснаас хялбар", tag: "тэмдэг нэр", example: "案外難しい (Бодсоноос хэцүү)" },
+            { kanji: "言い出す", kana: "いいだす", translation: "хэлж эхлэх, санал болгох", tag: "үйл үг", example: "本音を言い出す (Үнэнээ хэлж эхлэх)" },
+            { kanji: "言い付ける", kana: "いいつける", translation: "тушаах, зааварлах, ховлох", tag: "үйл үг", example: "用事を言い付ける (Ажил даалгах)" },
+            { kanji: "意義", kana: "いぎ", translation: "утга учир, ач холбогдол", tag: "нэр үг", example: "意義のある生活 (Утга учиртай амьдрал)" },
+            { kanji: "生き生き", kana: "いきいき", translation: "цовоо сэргэлэн, эрч хүчтэй", tag: "дайвар үг", example: "生き生きと話す (Эрч хүчтэй ярих)" },
+            { kanji: "育児", kana: "いくじ", translation: "хүүхэд өсгөх, хүмүүжүүлэх", tag: "нэр үг", example: "育児に励む (Хүүхдээ өсгөхөөр хичээх)" },
+            { kanji: "幾分", kana: "いくぶん", translation: "бага зэрэг, хэсэг хэмжээгээр", tag: "дайвар үг", example: "幾分良くなった (Бага зэрэг дээрдсэн)" },
+            { kanji: "生け花", kana: "いけばな", translation: "Икэбана (цэцэг чимэглэх урлаг)", tag: "нэр үг", example: "生け花を習う (Икэбана сурах)" },
+            { kanji: "以後", kana: "いご", translation: "үүнээс хойш, дараа нь", tag: "нэр үг", example: "以後、注意します (Үүнээс хойш анхааръя)" },
+            { kanji: "以降", kana: "いこう", translation: "тухайн цаг мөчөөс эхлэн, хойш", tag: "нэр үг", example: "来週以降に (Дараагийн долоо хоногоос хойш)" },
+            { kanji: "勇ましい", kana: "いさましい", translation: "эр зоригтой, баатарлаг", tag: "тэмдэг нэр", example: "勇ましい姿 (Эрэлхэг дүр төрх)" },
+            { kanji: "衣食住", kana: "いしょくじゅう", translation: "амьдралын наад захын хэрэгцээ (хоол, хувцас, орон байр)", tag: "нэр үг", example: "衣食住の確保 (Амьдралын суурь хэрэгцээг хангах)" },
+            { kanji: "意地悪", kana: "いじわる", translation: "хорон санаатай, дургүй хүргэм", tag: "тэмдэг нэр", example: "意地悪な質問 (Хорон асуулт)" },
+            { kanji: "一応", kana: "いちおん", translation: "ямартай ч, одоогоор бол", tag: "дайвар үг", example: "一応完成した (Ямартай ч дууссан)" },
+            { kanji: "一段と", kana: "いちだんと", translation: "илүү ихээр, улам бүр", tag: "дайвар үг", example: "一段と寒くなる (Улам бүр хүйтрэх)" },
+            { kanji: "一流", kana: "いちりゅう", translation: "дээд зэрэглэлийн, шилдэг", tag: "нэр үг", example: "一流の技術 (Дээд зэрэглэлийн технологи)" },
+            { kanji: "佚", kana: "いつ", translation: "алга болох, тайван амгалан болох", tag: "бусад", example: "佚する (Элэгдэж устах)" },
+            { kanji: "一昨日", kana: "いっさくじつ", translation: "уржигдар", tag: "нэр үг", example: "一昨日の夜 (Уржигдрын шөнө)" },
+            { kanji: "一昨年", kana: "いっさくねん", translation: "уржнан, хоёр жилийн өмнө", tag: "нэр үг", example: "一昨年に来た (Уржнан ирсэн)" },
+            { kanji: "一斉", kana: "いっせい", translation: "нэгэн зэрэг, цөмөөрөө хамт", tag: "дайвар үг", example: "一斉にスタートする (Нэгэн зэрэг эхлэх)" },
+            { kanji: "一旦", kana: "いったん", translation: "түр зуурдаа, нэгэнт", tag: "дайвар үг", example: "一旦停止する (Түр зогсох)" },
+            { kanji: "一定", kana: "いってい", translation: "тодорхой, тогтсон, өөрчлөгдөхгүй", tag: "тэмдэг нэр", example: "一定の温度 (Тогтмол температур)" },
+            { kanji: "移転", kana: "いてん", translation: "нүүх, шилжүүлэх (оффис, дэлгүүр)", tag: "нэр үг", example: "事務所の移転 (Оффис нүүх)" },
+            { kanji: "井戸", kana: "いど", translation: "худаг", tag: "нэр үг", example: "井戸から水を汲む (Худгаас ус татах)" },
+            { kanji: "緯度", kana: "いど", translation: "газар зүйн өргөрөг", tag: "нэр үг", example: "高緯度地域 (Өндөр өргөрөгийн бүс)" },
+            { kanji: "従姉妹", kana: "いとこ", translation: "үеэл (эмэгтэй)", tag: "нэр үг", example: "私の従姉妹 (Миний үеэл)" },
+            { kanji: "威張る", kana: "いばる", translation: "онгирох, их зан гаргах, сагсуурах", tag: "үйл үг", example: "威張った態度 (Их зантай байдал)" },
+            { kanji: "嫌がる", kana: "いやがる", translation: "дургүйцэх, татгалзах", tag: "үйл үг", example: "学校を嫌がる (Сургуулиасаа татгалзах)" },
+            { kanji: "煎る", kana: "いる", translation: "шарах, хуурах (кофе, самар)", tag: "үйл үг", example: "豆を煎る (Шош хуурах)" },
+            { kanji: "入れ物", kana: "いれもの", translation: "сав, хайрцаг", tag: "нэр үг", example: "プラスチックの入れ物 (Хуванцар сав)" },
+            { kanji: "引力", kana: "いんりょく", translation: "таталцлын хүч", tag: "нэр үг", example: "地球の引力 (Дэлхийн таталцлын хүч)" },
+            { kanji: "植木", kana: "うえき", translation: "суулгац, таримал мод, ургамал", tag: "нэр үг", example: "植木の手入れ (Суулгац арчлах)" },
+            { kanji: "飢える", kana: "うえる", translation: "өлсөх, цангах (ерөнхий утгаар)", tag: "үйл үг", example: "愛に飢える (Хайраар цангах)" },
+            { kanji: "浮ぶ", kana: "うかぶ", translation: "хөвөх, санаанд орох", tag: "үйл үг", example: "アイデアが浮かぶ (Санаа орж ирэх)" },
+            { kanji: "浮かべる", kana: "うかべる", translation: "хөвүүлэх, царайндаа тодруулах", tag: "үйл үг", example: "涙を浮かべる (Нулимс цийлэгнүүлэх)" },
+            { kanji: "浮く", kana: "うく", translation: "хөвөх, ганцаардах, үлдэх (мөнгө)", tag: "үйл үг", example: "予算が浮く (Төсвөөс мөнгө үлдэх)" },
+            { kanji: "承る", kana: "うけたまわる", translation: "хүлээн авах, сонсох (даруу хэлбэр)", tag: "үйл үг", example: "ご注文を承る (Захиалга хүлээн авах)" },
+            { kanji: "受取", kana: "うけとり", translation: "хүлээн авах, баримт, талон", tag: "нэр үг", example: "領収書の受取 (Баримт хүлээн авах)" },
+            { kanji: "受け持つ", kana: "うけもつ", translation: "хариуцах, дааж авах", tag: "үйл үг", example: "クラスを受け持つ (Анги дааж авах)" },
+            { kanji: "薄暗い", kana: "うすぐらい", translation: "бүрхэг, бүрэнхий, харанхуйдуу", tag: "тэмдэг нэр", example: "薄暗い廊下 (Харанхуйдуу коридор)" },
+            { kanji: "薄める", kana: "うすめる", translation: "шингэлэх, усаар найруулах", tag: "үйл үг", example: "お茶を薄める (Цайг шингэлэх)" },
+            { kanji: "打合せ", kana: "うちあわせ", translation: "урьдчилсан уулзалт, бэлтгэл ярилцлага", tag: "нэр үг", example: "打合せを行う (Урьдчилсан уулзалт хийх)" },
+            { kanji: "打ち消す", kana: "うちけす", translation: "үгүйсгэх, үл зөвшөөрөх", tag: "үйл үг", example: "噂を打ち消す (Цуу яриаг үгүйсгэх)" },
+            { kanji: "討つ", kana: "うつ", translation: "довтлох, өшөө авах", tag: "үйл үг", example: "敵を討つ (Дайсныг дарах)" },
+            { kanji: "映す", kana: "うつす", translation: "тусгах, харуулах, сүүдэр гаргах", tag: "үйл үг", example: "姿を鏡に映す (Дүрээ толинд тусгах)" },
+            { kanji: "写る", kana: "うつる", translation: "зурагт буух, тусах", tag: "үйл үг", example: "写真に写る (Зурагт буух)" },
+            { kanji: "映る", kana: "うつる", translation: "тольдох, харагдах, зохицох", tag: "үйл үг", example: "テレビに映る (ТВ-ээр гарах)" },
+            { kanji: "有無", kana: "うむ", translation: "байгаа эсэх, бодит байдал", tag: "нэр үг", example: "経験の有無 (Туршлага байгаа эсэх)" },
+            { kanji: "埋める", kana: "うめる", translation: "булах, дүүргэх", tag: "үйл үг", example: "穴を埋める (Нүх булах)" },
+            { kanji: "敬う", kana: "うやまう", translation: "хүндэтгэх, дээдлэх", tag: "үйл үг", example: "神を敬う (Бурхныг хүндэтгэх)" },
+            { kanji: "裏返す", kana: "うらがえす", translation: "буруу харуулах, доторхыг эргүүлэх", tag: "үйл үг", example: "カードを裏返す (Картыг эргүүлэх)" },
+            { kanji: "裏口", kana: "うらぐち", translation: "арын хаалга", tag: "нэр үг", example: "裏口から入る (Арын хаалгаар орох)" },
+            { kanji: "占う", kana: "うらなう", translation: "мэргэлэх, таах", tag: "үйл үг", example: "運勢を占う (Хувь заяагаа мэргэлэх)" },
+            { kanji: "恨み", kana: "うらみ", translation: "өшөө хорсол, гомдол", tag: "нэр үг", example: "恨みを晴らす (Өшөөгөө авах)" },
+            { kanji: "恨む", kana: "うらむ", translation: "хорсох, гомдох", tag: "үйл үг", example: "人を恨む (Хүнд гомдох)" },
+            { kanji: "羨ましい", kana: "うらやましい", translation: "атаархмаар, гоё харагдах", tag: "тэмдэг нэр", example: "才能が羨ましい (Авьяастай нь атаархмаар)" },
+            { kanji: "羨む", kana: "うらやむ", translation: "атаархах, бишрэх", tag: "үйл үг", example: "他人の成功を羨む (Бусдын амжилтад атаархах)" },
+            { kanji: "売上", kana: "うりあげ", translation: "борлуулалтын орлого", tag: "нэр үг", example: "売上高 (Нийт борлуулалт)" },
+            { kanji: "売り切れ", kana: "うりきれ", translation: "зарагдаж дууссан", tag: "нэр үг", example: "売り切れ御免 (Зарагдаж дуусвал уучлаарай)" },
+            { kanji: "売り切れる", kana: "うりきれる", translation: "зарагдаж дуусах", tag: "үйл үг", example: "チケットが売り切れる (Тасалбар зарагдаж дуусах)" },
+            { kanji: "売行き", kana: "うれゆき", translation: "гүйлгээ, борлуулалтын явц", tag: "нэр үг", example: "売行きが良い (Гүйлгээ сайн байх)" },
+            { kanji: "運河", kana: "うんが", translation: "суваг, усан зам", tag: "нэр үг", example: "運河を渡る (Сувгийг гатлах)" },
+            { kanji: "英文", kana: "えいぶん", translation: "Англи өгүүлбэр, Англи хэл дээрх бичвэр", tag: "нэр үг", example: "英文で手紙を書く (Англиар захидал бичих)" },
+            { kanji: "英和", kana: "えいわ", translation: "Англи-Япон (толь бичиг)", tag: "нэр үг", example: "英和辞典 (Англи-Япон толь бичиг)" },
+            { kanji: "液体", kana: "えきたい", translation: "шингэн зүйл, шингэн төлөв", tag: "нэр үг", example: "液体燃料 (Шингэн түлш)" },
+            { kanji: "絵の具", kana: "えのぐ", translation: "будаг, усан будаг", tag: "нэр үг", example: "絵の具で絵を描く (Будгаар зураг зурах)" },
+            { kanji: "偉い", kana: "えらい", translation: "агуу, алдартай, мундаг, хэцүү", tag: "тэмдэг нэр", example: "偉い学者 (Мундаг эрдэмтэн)" },
+            { kanji: "宴会", kana: "えんかい", translation: "найр, хүлээн авалт, оройн зоог", tag: "нэр үг", example: "宴会を開く (Найр хийх)" },
+            { kanji: "園芸", kana: "えんげい", translation: "цэцэрлэгжилт, цэцэрлэгийн соёл", tag: "нэр үг", example: "園芸が趣味です (Миний сонирхол бол цэцэрлэгжилт)" },
+            { kanji: "演劇", kana: "えんげき", translation: "жүжиг, театрын урлаг", tag: "нэр үг", example: "演劇を観る (Жүжиг үзэх)" },
+            { kanji: "円周", kana: "えんしゅう", translation: "тойргийн урт, тойрог", tag: "нэр үг", example: "円周を計算する (тойргийн урт тооцох)" },
+            { kanji: "遠足", kana: "えんそく", translation: "явган аялал, салхинд гарах", tag: "нэр үг", example: "秋の遠足 (Намрын аялал)" },
+            { kanji: "延長", kana: "えんちょう", translation: "сунгах, уртасгах, цаг сунгах", tag: "нэр үг", example: "試合の延長 (Тоглолт сунах)" },
+            { kanji: "煙突", kana: "えんとつ", translation: "яндан", tag: "нэр үг", example: "煙突から煙が出る (Янданнаас утаа гарах)" },
+            { kanji: "追い掛ける", kana: "おいかける", translation: "хөөх, араас нь гүйх", tag: "үйл үг", example: "犯人を追いかける (Гэмт хэрэгтнийг хөөх)" },
+            { kanji: "追い越す", kana: "おいこす", translation: "түрүүлж гарах, гүйцэж түрүүлэх", tag: "үйл үг", example: "前の車を追い越す (Өмнөх машиныг гүйцэж түрүүлэх)" },
+            { kanji: "応援", kana: "おうえん", translation: "дэмжлэг, тусламж, дэмжих", tag: "нэр үг", example: "チームを応援する (Багаа дэмжих)" },
+            { kanji: "王女", kana: "おうじょ", translation: "гүнж", tag: "нэр үг", example: "美しい王女 (Үзэсгэлэнт гүнж)" },
+            { kanji: "応ずる", kana: "おうずる", translation: "хариулах, тохируулах, зөвшөөрөх", tag: "үйл үг", example: "期待に応ずる (Хүлээлтэд нийцэх)" },
+            { kanji: "応接", kana: "おうせつ", translation: "хүлээн авалт, уулзалт", tag: "нэр үг", example: "応接室 (Уулзалтын өрөө)" },
+            { kanji: "応対", kana: "おうたい", translation: "харилцах, үйлчлэх", tag: "нэр үг", example: "客の応対をする (Зочинтой харилцах)" },
+            { kanji: "往復", kana: "おうふく", translation: "ирэх очих, хоёр талын замын тасалбар", tag: "нэр үг", example: "往復切符 (Ирэх очих тасалбар)" },
+            { kanji: "欧米", kana: "おうべい", translation: "Барууны орнууд (Европ ба Америк)", tag: "нэр үг", example: "欧米諸国 (Барууны орнууд)" },
+            { kanji: "応用", kana: "おうよう", translation: "хэрэглээ, практик хэрэглээ", tag: "нэр үг", example: "応用技術 (Практик технологи)" },
+            { kanji: "大通り", kana: "おおどおり", translation: "төв зам, өргөн чөлөө", tag: "нэр үг", example: "大通りを歩く (Төв замаар алхах)" },
+            { kanji: "大凡", kana: "おおよそ", translation: "багцаагаар, ерөнхийдөө", tag: "дайвар үг", example: "大凡の金額 (Багцаа мөнгөн дүн)" },
+            { kanji: "お帰り", kana: "おかえり", translation: "гэртээ тавтай морил, буцаж ирэх", tag: "бусад", example: "お帰りなさい (Гэртээ тавтай морил)" },
+            { kanji: "拝む", kana: "おがむ", translation: "мөргөх, залбирах", tag: "үйл үг", example: "初日の出を拝む (Шинэ оны анхны наранд залбирах)" },
+            { kanji: "お代わり", kana: "おかわり", translation: "дахин нэг аяга хоол / ундаа", tag: "нэр үг", example: "ご飯のお代わり (Дахин нэг аяга будаа нэмэх)" },
+            { kanji: "補う", kana: "おぎなう", translation: "нөхөх, нэмэх, орлох", tag: "үйл үг", example: "不足を補う (Дутагдлыг нөхөх)" },
+            { kanji: "屋外", kana: "おくがい", translation: "гадаа, задгай талбайд", tag: "нэр үг", example: "屋外プール (Задгай усан бассейн)" },
+            { kanji: "送り仮名", kana: "おくりがな", translation: "Окригана (Ханзны ард бичигддэг хирагана)", tag: "нэр үг", example: "送り仮名を間違える (Окриганаг буруу бичих)" },
+            { kanji: "怠る", kana: "おこたる", translation: "хойш тавих, хайхрамжгүй хандах", tag: "үйл үг", example: "努力を怠る (Хичээл зүтгэлээ хойш тавих)" },
+            { kanji: "押える", kana: "おさえる", translation: "дарах, зогсоох, барих", tag: "үйл үг", example: "要点を押さえる (Чухал зүйлийг барьж авах)" },
+            { kanji: "納める", kana: "おさめる", translation: "төлөх, хүргэх, хураах", tag: "үйл үг", example: "税金を納める (Татвар төлөх)" },
+            { kanji: "治める", kana: "おさめる", translation: "удирдах, засах, номхотгох", tag: "үйл үг", example: "国を治める (Улс орныг удирдах)" },
+            { kanji: "惜しい", kana: "おしい", translation: "харамсалтай, хайран, үнэ цэнтэй", tag: "тэмдэг нэр", example: "惜しいチャンスを逃す (Хайран боломжийг алдах)" },
+            { kanji: "御辞儀", kana: "おじぎ", translation: "бөхийх, ёслох", tag: "нэр үг", example: "深く御辞儀をする (Гүн бөхийж ёслох)" },
+            { kanji: "伯父さん", kana: "おじさん", translation: "ах, авга ах (ээжийн эсвэл аавын том ах)", tag: "нэр үг", example: "私の伯父さん (Миний авга ах)" },
+            { kanji: "小父さん", kana: "おじさん", translation: "гудамжны ах, дунд насны эрэгтэй", tag: "нэр үг", example: "近所の小父さん (Хажуу айлын ах)" },
+            { kanji: "叔父さん", kana: "おじさん", translation: "ах, нагац ах (аав, ээжийн дүү)", tag: "нэр үг", example: "叔父からプレゼントをもらう (Нагац ахаас бэлэг авах)" },
+            { kanji: "教わる", kana: "おそわる", translation: "заалгах, сурах", tag: "үйл үг", example: "日本語を教わる (Япон хэл заалгах)" },
+            { kanji: "落着く", kana: "おちつく", translation: "тайвшрах, суурьших", tag: "үйл үг", example: "心が落ち着く (Сэтгэл тайвшрах)" },
+            { kanji: "御手洗", kana: "おてあらい", translation: "бие засах газар, гар угаах газар", tag: "нэр үг", example: "御手洗はどこですか (Бие засах газар хаана бэ?)" },
+            { kanji: "落し物", kana: "おとしもの", translation: "гээсэн зүйл", tag: "нэр үг", example: "落し物を届ける (Гээсэн зүйлийг авчирч өгөх)" },
+            { kanji: "驚かす", kana: "おどろかす", translation: "цочоох, гайхшруулах", tag: "үйл үг", example: "友達を驚かす (Найзыгаа цочоох)" },
+            { kanji: "各々", kana: "おのおの", translation: "тус бүр, хүн бүр", tag: "нэр үг", example: "各々の意見 (Хүн бүрийн санал)" },
+            { kanji: "伯母さん", kana: "おばさん", translation: "эгч, авга эгч (аав ээжийн том эгч)", tag: "нэр үг", example: "優しい伯母さん (Цайлган сэтгэлт авга эгч)" },
+            { kanji: "叔母さん", kana: "おばさん", translation: "эгч, нагац эгч (дүү эмэгтэй)", tag: "нэр үг", example: "叔母の家に行く (Нагац эгчийн гэрт очих)" },
+            { kanji: "お参り", kana: "おまいり", translation: "мөргөл хийх (сүмд очих)", tag: "нэр үг", example: "お寺にお参りする (Сүмд очиж мөргөх)" },
+            { kanji: "思い込む", kana: "おもいこむ", translation: "итгэх, бат бодох (заримдаа буруугаар)", tag: "үйл үг", example: "正しいと思い込む (Зөв гэж бат итгэх)" },
+            { kanji: "思い付く", kana: "おもいつく", translation: "толгойдоо оруулах, гэнэт бодож олох", tag: "үйл үг", example: "アイデアを思い付く (Санаа бодож олох)" },
+            { kanji: "重たい", kana: "おもたい", translation: "хүнд, маш хүнд (бие болон сэтгэл санаа)", tag: "тэмдэг нэр", example: "重たい荷物 (Хүнд ачаа)" },
+            { kanji: "親指", kana: "おやゆび", translation: "эрхий хуруу", tag: "нэр үг", example: "親指を立てる (Эрхий хуруугаа гозойлгох)" },
+            { kanji: "卸す", kana: "おろす", translation: "бөөний үнээр зарах, үрэх (ногоо)", tag: "үйл үг", example: "商品を卸す (Бараа бөөний үнээр зарах)" },
+            { kanji: "恩恵", kana: "おんけい", translation: "ач тус, ивээл, хишиг", tag: "нэр үг", example: "自然の恩恵 (Байгалийн ач тус)" },
+            { kanji: "温室", kana: "おんしつ", translation: "хүлэмж, дулаан өрөө", tag: "нэр үг", example: "温室育ち (Хүлэмжийн ургамал / Эрх дураараа өссөн)" },
+            { kanji: "温泉", kana: "おんせん", translation: "халуун рашаан, Онсэн", tag: "нэр үг", example: "温泉に入る (Халуун рашаанд орох)" },
+            { kanji: "温帯", kana: "おんたい", translation: "уур амьсгалын ônц бүс", tag: "нэр үг", example: "温帯気候 (Өнц уур амьсгал)" },
+            { kanji: "御中", kana: "おんちゅう", translation: "Ончү (Байгууллагын нэр дээр хаяглахад ашиглана)", tag: "бусад", example: "○○株式会社 御中 (○○ ХК-д)" },
+            { kanji: "女の人", kana: "おんなのひと", translation: "эмэгтэй хүн", tag: "нэр үг", example: "親切な女の人 (Тусархаг эмэгтэй хүн)" },
+            { kanji: "蚊", kana: "か", translation: "шумуул", tag: "нэр үг", example: "蚊に刺される (Шумуулд хазуулах)" },
+            { kanji: "貝", kana: "かい", translation: "хясаа, дун", tag: "нэр үг", example: "貝を拾う (Хясаа түүх)" },
+            { kanji: "開会", kana: "かいかい", translation: "хурал / уулзалт эхлэх, нээлт хийх", tag: "нэр үг", example: "開会を宣言する (Нээлтийг зарлах)" },
+            { kanji: "会館", kana: "かいかん", translation: "соёлын ордон, уулзалтын танхим", tag: "нэр үг", example: "市民会館 (Иргэдийн соёлын ордон)" },
+            { kanji: "改札", kana: "かいさツ", translation: "тасалбар шалгах хэсэг (өртөөн дээрх)", tag: "нэр үг", example: "改札を通る (Тасалбар шалгах хэсгээр гарах)" },
+            { kanji: "解散", kana: "かいさん", translation: "тарах, үйл ажиллагааг зогсоох", tag: "нэр үг", example: "国会の解散 (Парламент тарах)" },
+            { kanji: "海水浴", kana: "かいすいよく", translation: "далайд сэлэх, далайн эрэг дээр амрах", tag: "нэр үг", example: "海水浴に行く (Далайд сэлэхээр явах)" },
+            { kanji: "回数", kana: "かいすう", translation: "давтамж, тоо хэмжээ (хэдэн удаа)", tag: "нэр үг", example: "利用回数 (Ашигласан тоо)" },
+            { kanji: "回数券", kana: "かいすうけん", translation: "олон удаа зорчих тасалбарын дэвтэр", tag: "нэр үг", example: "バスの回数券 (Автобусны олон удаагийн тасалбар)" },
+            { kanji: "改正", kana: "かいせい", translation: "шинэчлэлт, хууль өөрчлөх", tag: "нэр үг", example: "憲法改正 (Үндсэн хуулийн өөрчлөлт)" },
+            { kanji: "快晴", kana: "かいせい", translation: "цэлмэг өдөр, маш сайхан цаг агаар", tag: "нэр үг", example: "秋晴れの快晴 (Намрын цэлмэг өдөр)" },
+            { kanji: "解説", kana: "かいせつ", translation: "тайлбар, тойм, тайлбар бичих", tag: "нэр үг", example: "ニュースの解説 (Мэдээний тайлбар)" },
+            { kanji: "改造", kana: "かいぞう", translation: "өөрчлөн шинэчлэх, засаж сайжруулах", tag: "нэр үг", example: "バイクの改造 (Мотоцикл засаж сайжруулах)" },
+            { kanji: "開通", kana: "かいつう", translation: "ашиглалтад орох (зам, шугам)", tag: "нэр үг", example: "新幹線の開通 (Хурдан галт тэрэг ашиглалтад орох)" },
+            { kanji: "回転", kana: "かいてん", translation: "эргэлт, тойрох хөдөлгөөн", tag: "нэр үг", example: "車輪の回転 (Дугуйны эргэлт)" },
+            { kanji: "解答", kana: "かいとう", translation: "хариулт, бодолт (шалгалтын)", tag: "нэр үг", example: "解答用紙 (Хариултын хуудас)" },
+            { kanji: "回答", kana: "かいとう", translation: "хариу өгөх, албан ёсны хариу", tag: "нэр үг", example: "アンケートの回答 (Асуулгын хариу)" },
+            { kanji: "外部", kana: "がいぶ", translation: "гадна тал, хөндлөнгийн хүн", tag: "нэр үг", example: "外部からの苦情 (Хөндлөнгийн хүнээс ирсэн гомдол)" },
+            { kanji: "解放", kana: "かいほう", translation: "чөлөөлөх, суллах", tag: "нэр үг", example: "奴隷の解放 (Боолуудыг чөлөөлөх)" },
+            { kanji: "開放", kana: "かいほう", translation: "нээлттэй болгох, нээх", tag: "нэр үг", example: "市場の開放 (Зах зээлийг нээлттэй болгох)" },
+            { kanji: "海洋", kana: "かいよう", translation: "далай тэнгис, далай", tag: "нэр үг", example: "海洋生物 (Далайн амьд биет)" },
+            { kanji: "概論", kana: "がいろん", translation: "удиртгал, ерөнхий онол", tag: "нэр үг", example: "文学概論 (Уран зохиолын удиртгал)" },
+            { kanji: "帰す", kana: "かえす", translation: "буцааж явуулах", tag: "үйл үг", example: "客を帰す (Зочныг буцааж явуулах)" },
+            { kanji: "却って", kana: "かえって", translation: "эсрэгээрээ, харин ч бүр", tag: "дайвар үг", example: "薬が却って毒になる (Эм нь эсрэгээрээ хор болох)" },
+            { kanji: "代える", kana: "かえる", translation: "солих, орлуулах", tag: "үйл үг", example: "命に代える (Амиараа орлуулах)" },
+            { kanji: "反る", kana: "かえる", translation: "хэлбэрээ алдах, нумрах, хотойх", tag: "үйл үг", example: "板が反る (Тамбар мод хотойх)" },
+            { kanji: "家屋", kana: "かおく", translation: "орон сууц, байшин барилга", tag: "нэр үг", example: "古い家屋 (Хуучин байшин барилга)" },
+            { kanji: "係わる", kana: "かかわる", translation: "хамааралтай байх, нөлөөлөх", tag: "үйл үг", example: "命に係わる問題 (Амь насанд хамааралтай асуудал)" },
+            { kanji: "書留", kana: "かきとめ", translation: "баталгаат шуудан, бүртгэлтэй шуудан", tag: "нэр үг", example: "書留で送る (Баталгаат шуудангаар илгээх)" },
+            { kanji: "書取", kana: "かきとり", translation: "сонсголын диктант, бичлэг", tag: "нэр үг", example: "漢字の書取 (Ханзны диктант)" },
+            { kanji: "垣根", kana: "かきね", translation: "хашаа, ургамлан хашаа", tag: "нэр үг", example: "隣との垣根 (Хөрш айлын хашаа)" },
+            { kanji: "掻く", kana: "かく", translation: "маажих, хөлрөх, хусах", tag: "үйл үг", example: "頭を掻く (Толгойгоо маажих)" },
+            { kanji: "嗅ぐ", kana: "かぐ", translation: "үнэрлэх", tag: "үйл үг", example: "においを嗅ぐ (Үнэр үнэрлэх)" },
+            { kanji: "架空", kana: "かくう", translation: "зохиомол, хуурмаг, агаарын", tag: "нэр үг", example: "架空の人物 (Зохиомол дүр)" },
+            { kanji: "各自", kana: "かくじ", translation: "хүн бүр, тус бүр", tag: "нэр үг", example: "各自の持ち物 (Хүн бүрийн хувийн эд зүйлс)" },
+            { kanji: "拡充", kana: "かくじゅう", translation: "өргөтгөх, нэмэгдүүлэх", tag: "нэр үг", example: "設備の拡充 (Тоног төхөөрөмжийг өргөтгөх)" },
+            { kanji: "学術", kana: "がくじゅつ", translation: "шинжлэх ухаан, академик судалгаа", tag: "нэр үг", example: "学術研究 (Эрдэм шинжилгээний судалгаа)" },
+            { kanji: "各地", kana: "かくち", translation: "газар бүр, бүх газар", tag: "нэр үг", example: "世界各地 (Дэлхийн өнцөг булан бүр)" },
+            { kanji: "拡張", kana: "かくちょう", translation: "тэлэлт, өргөсөлт", tag: "нэр үг", example: "道路の拡張 (Зам өргөтгөх)" },
+            { kanji: "角度", kana: "かくど", translation: "өнцөг, харах өнцөг", tag: "нэр үг", example: "カメラの角度 (Камерын өнцөг)" },
+            { kanji: "学年", kana: "がくねん", translation: "сургуулийн курс, анги (хэддүгээр анги)", tag: "нэр үг", example: "同じ学年 (Нэг сургуулийн нэг курс)" },
+            { kanji: "学部", kana: "がくぶ", translation: "их сургуулийн факультет, салбар сургууль", tag: "нэр үг", example: "文学部 (Уран зохиолын факультет)" },
+            { kanji: "格別", kana: "かくべつ", translation: "онцгой, гойд, ердийн бус", tag: "тэмдэг нэр", example: "格別な味 (Онцгой амт)" },
+            { kanji: "確率", kana: "かくりつ", translation: "магадлал", tag: "нэр үг", example: "成功の確率 (Амжилтын магадлал)" },
+            { kanji: "学力", kana: "がくりょく", translation: "сурах чадвар, сурлагын түвшин", tag: "нэр үг", example: "学力をテストする (Сурлагын түвшнийг шалгах)" },
+            { kanji: "掛け算", kana: "かけざん", translation: "үржүүлэхийн хүрд, үржүүлэх", tag: "нэр үг", example: "掛け算を覚える (Үржүүлэхийн хүрд цээжлэх)" },
+            { kanji: "可決", kana: "かけつ", translation: "зөвшөөрөх, батлах (санал хураалтаар)", tag: "нэр үг", example: "議案の可決 (Төслийг батлах)" },
+            { kanji: "火口", kana: "かこう", translation: "галт уулын тогоо", tag: "нэр үг", example: "活火山の火口 (Идэвхтэй галт уулын тогоо)" },
+            { kanji: "下降", kana: "かこう", translation: "уруудах, доошлох, буурах", tag: "нэр үг", example: "気温の下降 (Агаарын температур буурах)" },
+            { kanji: "重なる", kana: "かさなる", translation: "давхцах, дээр дээрээсээ давхарлах", tag: "үйл үг", example: "予定が重なる (Төлөвлөгөө давхцах)" },
+            { kanji: "重ねる", kana: "かさねる", translation: "давхарлан тавих, давтах", tag: "үйл үг", example: "本を重ねる (Номуудыг давхарлан тавих)" },
+            { kanji: "飾り", kana: "かざり", translation: "чимэглэл", tag: "нэр үг", example: "クリスマスの飾り (Зул сарын чимэглэл)" },
+            { kanji: "火山", kana: "かざん", translation: "галт уул", tag: "нэр үг", example: "火山の噴火 (Галт уул дэлбэрэх)" },
+            { kanji: "貸し出し", kana: "かしだし", translation: "зээлдүүлэх, ном олгох (номын сангаас)", tag: "нэр үг", example: "図書の貸し出し (Ном зээлүүлэх)" },
+            { kanji: "過失", kana: "かしつ", translation: "санамсаргүй алдаа, буруутай үйлдэл", tag: "нэр үг", example: "過失を認める (Алдаагаа зөвшөөрөх)" },
+            { kanji: "果実", kana: "かじつ", translation: "жимс, жимсгэнэ", tag: "нэр үг", example: "果実酒 (Жимсний дарс)" },
+            { kanji: "貸間", kana: "かしま", translation: "түрээслэх өрөө", tag: "нэр үг", example: "貸間を探す (Түрээслэх өрөө хайх)" },
+            { kanji: "貸家", kana: "かしや", translation: "түрээслэх байшин, түрээсийн сууц", tag: "нэр үг", example: "貸家の看板 (Түрээсийн байшингийн хаяг)" },
+            { kanji: "個所", kana: "かしょ", translation: "хэсэг, газар, цэг", tag: "нэр үг", example: "間違った個所 (Алдаатай хэсэг)" },
+            { kanji: "過剰", kana: "かじょう", translation: "илүүдэл, хэт их", tag: "тэмдэг нэр", example: "自信過剰 (Хэт их өөртөө итгэлтэй байдал)" },
+            { kanji: "課税", kana: "かぜい", translation: "татвар ногдуулах, татвар", tag: "нэр үг", example: "課税対象 (Татвар ногдох бараа)" },
+            { kanji: "下線", kana: "かせん", translation: "доогуур зураас, доогуур зурах", tag: "нэр үг", example: "下線を引く (Доогуур зураас зурах)" },
+            { kanji: "加速", kana: "かそく", translation: "хурд нэмэх, хурдасгах", tag: "нэр үг", example: "車の加速 (Машины хурд авах)" },
+            { kanji: "加速度", kana: "かそくど", translation: "хурдатгал", tag: "нэр үг", example: "加速度的に進む (Маш хурдацтай урагшлах)" },
+            { kanji: "固い", kana: "かたい", translation: "хатуу, бат бөх, зөрүүд", tag: "тэмдэг нэр", example: "固い握手 (Бат бөх гар барилт)" },
+            { kanji: "堅い", kana: "かたい", translation: "хатуу (мод, төмөр мэт), найдвартай", tag: "тэмдэг нэр", example: "堅い商売 (Найдвартай бизнес)" },
+            { kanji: "片仮名", kana: "かたかな", translation: "Катакана үсэг", tag: "нэр үг", example: "片仮名で書く (Катаканагаар бичих)" },
+            { kanji: "片付く", kana: "かたづく", translation: "цэгцрэх, асуудал шийдэгдэх", tag: "үйл үг", example: "部屋が片付く (Өрөө цэгцрэх)" },
+            { kanji: "塊", kana: "かたまり", translation: "бөөгнөрөл, хэсэг хатуу зүйл", tag: "нэр үг", example: "土の塊 (Шорооны хэсэг бөөгнөрөл)" },
+            { kanji: "固まる", kana: "かたまる", translation: "хатуурах, царцах, батжих", tag: "үйл үг", example: "コンクリートが固まる (Бетон царцах)" },
+            { kanji: "片道", kana: "かたみち", translation: "нэг талын зам, нэг талын тасалбар", tag: "нэр үг", example: "片道切符 (Нэг талын тасалбар)" },
+            { kanji: "傾く", kana: "かたむく", translation: "хазайх, хэлбийх, чиглэх", tag: "үйл үг", example: "太陽が傾く (Нар хэлбийх)" },
+            { kanji: "片寄る", kana: "かたよる", translation: "нэг талыг барих, туйлшрах", tag: "үйл үг", example: "考えが片寄る (Бодол нь туйлшрах)" },
+            { kanji: "学科", kana: "がっか", translation: "хичээлийн чиглэл, тэнхим", tag: "нэр үг", example: "人文学科 (Хүмүүнлэгийн ухааны тэнхим)" },
+            { kanji: "学会", kana: "がっかい", translation: "эрдэм шинжилгээний хурал, нийгэмлэг", tag: "нэр үг", example: "学会で発表する (Эрдэм шинжилгээний хуралд илтгэл тавих)" },
+            { kanji: "楽器", kana: "がっき", translation: "хөгжмийн зэмсэг", tag: "нэр үг", example: "楽器を演奏する (Хөгжмийн зэмсэг тоглох)" },
+            { kanji: "学級", kana: "がっきゅう", translation: "анги хамт олон (сургуулийн)", tag: "нэр үг", example: "学級閉鎖 (Ангийн үйл ажиллагааг түр зогсоох)" },
+            { kanji: "担ぐ", kana: "かつぐ", translation: "мөрлөх, үүрэх", tag: "үйл үг", example: "神輿を担ぐ (Микошиг мөрлөх)" },
+            { kanji: "括弧", kana: "かっこ", translation: "хаалт, хаалтанд хийх", tag: "нэр үг", example: "括弧に入れる (Хаалтанд хийх)" },
+            { kanji: "活字", kana: "かつじ", translation: "барны үсэг, хэвлэмэл үсэг", tag: "нэр үг", example: "活字中毒 (Ном унших дон)" },
+            { kanji: "活躍", kana: "かつやく", translation: "идэвхтэй зүтгэх, амжилт гаргах", tag: "нэр үг", example: "世界での活躍 (Дэлхийн тавцанд гаргасан амжилт)" },
+            { kanji: "活力", kana: "かつりょく", translation: "амьдралын эрч хүч, идэвхтэй чанар", tag: "нэр үг", example: "活力に満ちる (Эрч хүчээр дүүрэн байх)" },
+            { kanji: "仮定", kana: "かてい", translation: "таамаглал, гэж үзэх", tag: "нэр үг", example: "仮定の話 (Таамаглалын яриа)" },
+            { kanji: "過程", kana: "かてい", translation: "үйл явц, дамжлага", tag: "нэр үг", example: "進化の過程 (Хөгжлийн үйл явц)" },
+            { kanji: "課程", kana: "かてい", translation: "сургалтын хөтөлбөр, курс", tag: "нэр үг", example: "博士課程 (Докторын курс)" },
+            { kanji: "仮名", kana: "かな", translation: "Хирагана ба Катакана үсэг", tag: "нэр үг", example: "仮名でルビを振る (Ханзан дээр үсгийн дуудлага тавих)" },
+            { kanji: "仮名遣い", kana: "かなづかい", translation: "Кана үсгийн зөв бичих дүрэм", tag: "нэр үг", example: "現代仮名遣い (Орчин үеийн Кана үсгийн дүрэм)" },
+            { kanji: "鐘", kana: "かね", translation: "хонх, сүмийн том хонх", tag: "нэр үг", example: "お寺の鐘を鳴らす (Сүмийн хонх цохих)" },
+            { kanji: "加熱", kana: "かねつ", translation: "халаах, халаалт", tag: "нэр үг", example: "食品を加熱する (Хүнсийг халааж болгох)" },
+            { kanji: "兼ねる", kana: "かねる", translation: "давхар гүйцэтгэх, хослуулах", tag: "үйл үг", example: "趣味と実益を兼ねる (Сонирхол болон ашгаа хослуулах)" },
+            { kanji: "過半数", kana: "かはんすう", translation: "олонх, талаас илүү хувь", tag: "нэр үг", example: "過半数の賛成 (Олонхын зөвшөөрөл)" },
+            { kanji: "被せる", kana: "かぶせる", translation: "бүтэх, нөмөргөх, бурууг тохох", tag: "үйл үг", example: "帽子を被せる (Малгай өмсгөх)" },
+            { kanji: "釜", kana: "かま", translation: "тогоо", tag: "нэр үг", example: "ご飯を釜で炊く (Будааг тогоонд агшаах)" },
+            { kanji: "紙屑", kana: "かみくず", translation: "цаасны хог, хаягдал цаас", tag: "нэр үг", example: "紙屑をゴミ箱に入れる (Хаягдал цаасыг хогийн саванд хийх)" },
+            { kanji: "神様", kana: "かみさま", translation: "Бурхан, тэнгэр", tag: "нэр үг", example: "神様に祈る (Бурханд залбирах)" },
+            { kanji: "剃刀", kana: "かみそり", translation: "сахлын хутга, сахлын машин", tag: "нэр үг", example: "剃刀で髭を剃る (Сахлаа хутгаар хусах)" },
+            { kanji: "貨物", kana: "かもつ", translation: "ачаа, ачааны бараа", tag: "нэр үг", example: "貨物列車 (Ачааны галт тэрэг)" },
+            { kanji: "歌謡", kana: "かよう", translation: "дуу, ардын дуу", tag: "нэр үг", example: "昭和歌謡 (Шоовагийн үеийн дуунууд)" },
+            { kanji: "殻", kana: "から", translation: "хальс, өндөгний хальс", tag: "нэр үг", example: "卵の殻 (Өндөгний хальс)" },
+            { kanji: "空っぽ", kana: "からっぽ", translation: "хоосон, юу ч байхгүй", tag: "тэмдэг нэр", example: "冷蔵庫が空っぽだ (Хөргөгч хоосон байна)" },
+            { kanji: "枯れる", kana: "かれる", translation: "хатах, ургамал хатаж үхэх", tag: "үйл үг", example: "花が枯れる (Цэцэг хатах)" },
+            { kanji: "乾かす", kana: "かわかす", translation: "хатаах (хувцас, үс)", tag: "үйл үг", example: "髪をドライヤーで乾かす (Үсээ хатаагчаар хатаах)" },
+            { kanji: "渇く", kana: "かわく", translation: "ам цангах", tag: "үйл үг", example: "のどが渇く (Ам цангах)" },
+            { kanji: "為替", kana: "かわせ", translation: "гадаад валют, мөнгөн гуйвуулга", tag: "нэр үг", example: "外国為替 (Гадаад валют арилжаа)" },
+            { kanji: "瓦", kana: "かわら", translation: "дээврийн ваар", tag: "нэр үг", example: "瓦屋根 (Вааран дээвэр)" },
+            { kanji: "代る", kana: "かわる", translation: "орлох, солигдох", tag: "үйл үг", example: "運転手が代わる (Жолооч солигдох)" },
+            { kanji: "間隔", kana: "かんかく", translation: "зай, зай барих", tag: "нэр үг", example: "間隔を空ける (Зай барих)" },
+            { kanji: "換気", kana: "かんき", translation: "агаар сэлгэлт, агааржуулалт", tag: "нэр үг", example: "部屋の換気 (Өрөөний агааржуулалт)" },
+            { kanji: "感激", kana: "かんげき", translation: "сэтгэл маш их хөдлөх", tag: "нэр үг", example: "映画に感激する (Кинонд сэтгэл маш их хөдлөх)" },
+            { kanji: "鑑賞", kana: "かんしょう", translation: "урлаг үзэж таашаах, урлагийн бүтээл үзэх", tag: "нэр үг", example: "絵画の鑑賞 (Уран зураг үзэж таашаах)" },
+            { kanji: "感ずる", kana: "かんずる", translation: "мэдрэх, сэтгэл төрөх", tag: "үйл үг", example: "痛みを感じる (Өвдөлтийг мэдрэх)" },
+            { kanji: "間接", kana: "かんせつ", translation: "шууд бус, дам", tag: "нэр үг", example: "間接的な影響 (Шууд бус нөлөөлөл)" },
+            { kanji: "乾燥", kana: "かんそう", translation: "хуурайших, хатаах", tag: "нэр үг", example: "空気が乾燥している (Агаар хуурай байна)" },
+            { kanji: "感想", kana: "かんそう", translation: "сэтгэгдэл, бодол санаа", tag: "нэр үг", example: "本を読んだ感想 (Ном уншсан сэтгэгдэл)" },
+            { kanji: "観測", kana: "かんそく", translation: "ажиглалт, хэмжилт", tag: "нэр үг", example: "天体の観測 (Одон орны ажиглалт)" },
+            { kanji: "寒帯", kana: "かんたい", translation: "хүйтэн бүс", tag: "нэр үг", example: "寒帯気候 (Хүйтэн бүсийн уур амьсгал)" },
+            { kanji: "官庁", kana: "かんちょう", translation: "төрийн байгууллага, яам тамгын газар", tag: "нэр үг", example: "官庁街 (Төрийн байгууллагуудын гудамж)" },
+            { kanji: "勘違い", kana: "かんちがい", translation: "эндүүрэл, буруу бодох", tag: "нэр үг", example: "私の勘違いでした (Миний эндүүрэл байлаа)" },
+            { kanji: "缶詰", kana: "かんづめ", translation: "лаазалсан хүнс", tag: "нэр үг", example: "魚の缶詰 (Лаазалсан загас)" },
+            { kanji: "乾電池", kana: "かんでんち", translation: "ердийн зай, хуурай батерей", tag: "нэр үг", example: "乾電池を交換する (Зай солих)" },
+            { kanji: "関東", kana: "かんとう", translation: "Канто бүс (Токио орчмын бүс)", tag: "нэр үг", example: "関東地方 (Канто муж)" },
+            { kanji: "観念", kana: "かんねん", translation: "санаа, ойлголт, бууж өгөх", tag: "нэр үг", example: "固定観念 (Хэвшмэл ойлголт)" },
+            { kanji: "乾杯", kana: "かんぱい", translation: "Төлөө! (Хундага тулгах)", tag: "нэр үг", example: "皆様の健康を祝して乾杯 (Та бүхний эрүүл мэндийн төлөө хундага тулгая)" },
+            { kanji: "看板", kana: "かんばん", translation: "хаяг, самбар", tag: "нэр үг", example: "看板を掲げる (Самбар өлгөх)" },
+            { kanji: "看病", kana: "かんびょう", translation: "өвчтөн асрах", tag: "нэр үг", example: "母を看病する (Ээжийгээ асрах)" },
+            { kanji: "冠", kana: "かんむり", translation: "титэм", tag: "нэр үг", example: "金の冠 (Алтан титэм)" },
+            { kanji: "漢和", kana: "かんわ", translation: "Ханз-Япон толь бичиг", tag: "нэр үг", example: "漢和辞典 (Ханзны толь бичиг)" },
+            { kanji: "気圧", kana: "きあつ", translation: "агаарын даралт", tag: "нэр үг", example: "高気圧 (Өндөр даралт)" },
+            { kanji: "器械", kana: "きかい", translation: "багаж хэрэгсэл, төхөөрөмж", tag: "нэр үг", example: "医療器械 (Эмнэлгийн багаж хэрэгсэл)" },
+            { kanji: "着替え", kana: "きгaе", translation: "хувцас солих, солих хувцас", tag: "нэр үг", example: "着替えを持っていく (Солих хувцас авч явах)" },
+            { kanji: "機関車", kana: "きかんしゃ", translation: "зүтгүүр галт тэрэг, уурын тэрэг", tag: "нэр үг", example: "蒸気機関車 (Уурын зүтгүүрт галт тэрэг)" },
+            { kanji: "飢饉", kana: "ききん", translation: "өлсгөлөн, ган зуд", tag: "нэр үг", example: "大飢饉 (Их өлсгөлөн)" },
+            { kanji: "器具", kana: "きぐ", translation: "хэрэгсэл, багаж", tag: "нэр үг", example: "調理器具 (Гал тогооны хэрэгсэл)" },
+            { kanji: "期限", kana: "きげん", translation: "дуусах хугацаа, хугацааны хязгаар", tag: "нэр үг", example: "有効期限 (Хүчинтэй хугацаа)" },
+            { kanji: "記号", kana: "きごう", translation: "тэмдэг, тэмдэглэгээ", tag: "нэр үг", example: "記号を書き込む (Тэмдэглэгээ бичих)" },
+            { kanji: "刻む", kana: "きざむ", translation: "сийлбэрлэх, жижиглэж хэрчих, зүрхэнд хоногших", tag: "үйл үг", example: "歴史に名を刻む (Түүхэнд нэрээ сийлж үлдээх)" },
+            { kanji: "儀式", kana: "ぎしき", translation: "ёслол, зан үйл", tag: "нэр үг", example: "結婚の儀式 (Гэрлэх ёслол)" },
+            { kanji: "基準", kana: "きじゅん", translation: "шалгуур, стандарт", tag: "нэр үг", example: "選考基準 (Сонгон шалгаруулах шалгуур)" },
+            { kanji: "規準", kana: "きじゅん", translation: "хэм хэмжээ, норм", tag: "нэр үг", example: "社会的な規準 (Нийгмийн хэм хэмжээ)" },
+            { kanji: "起床", kana: "きしょう", translation: "орондоо босох, сэрэх", tag: "нэр үг", example: "朝6時に起床する (Өглөө 6 цагт орондоо босох)" },
+            { kanji: "着せる", kana: "きせる", translation: "өмсгөх, бурууг бусдад тохох", tag: "үйл үг", example: "子供に洋服を着せる (Хүүхдэд хувцас өмсгөх)" },
+            { kanji: "基礎", kana: "きそ", translation: "суурь, үндэс суурь", tag: "нэр үг", example: "基礎から学ぶ (Сууриас нь суралцах)" },
+            { kanji: "気体", kana: "きたい", translation: "хийн төлөв, хий", tag: "нэр үг", example: "有毒気体 (Хортой хий)" },
+            { kanji: "基地", kana: "きち", translation: "цэргийн бааз, суурь газар", tag: "нэр үг", example: "宇宙基地 (Сансрын бааз)" },
+            { kanji: "基盤", kana: "きばん", translation: "суурь бүтэц, платформ, үндэс", tag: "нэр үг", example: "生活基盤 (Амьдралын суурь)" },
+            { kanji: "客席", kana: "きゃくせき", translation: "үзэгчдийн суудаг хэсэг, суудал", tag: "нэр үг", example: "客席が満員になる (Үзэгчдийн суудал дүүрэх)" },
+            { kanji: "客間", kana: "きゃくま", translation: "зочны өрөө", tag: "нэр үг", example: "客間に通す (Зочны өрөөнд урих)" },
+            { kanji: "休業", kana: "きゅうぎょう", translation: "үйл ажиллагааг түр зогсоох, амрах (дэлгүүр)", tag: "нэр үг", example: "臨時休業 (Түр амралт)" },
+            { kanji: "休講", kana: "きゅうこう", translation: "хичээл цуцлагдах", tag: "нэр үг", example: "大学の授業が休講になる (Их сургуулийн хичээл цуцлагдах)" },
+            { kanji: "休息", kana: "きゅうそく", translation: "амрах, чөлөө авах", tag: "нэр үг", example: "ゆっくり休息をとる (Тайван амрах)" },
+            { kanji: "給与", kana: "きゅうよ", translation: "цалин, цалин хөлс", tag: "нэр үг", example: "月々の給与 (Сарын цалин)" },
+            { kanji: "休養", kana: "きゅうよう", translation: "бие махбодио амраах, амралт", tag: "нэр үг", example: "温泉で休養する (Халуун рашаанд биеэ амраах)" }
+        ];
+
+        let words = [...defaultWords];
+        let currentIndex = 0;
+
+        // Хэрэглэгчийн суралцсан төлөв (LocalStorage-оос унших)
+        let knownWords = JSON.parse(localStorage.getItem('knownWords')) || [];
+        let unknownWords = JSON.parse(localStorage.getItem('unknownWords')) || [];
+
+        // Апп ачаалагдахад ажиллах
+        window.onload = function() {
+            updateFlashcard();
+            updateStats();
+        };
+
+        // Таб солих функц
+        function switchTab(tabName) {
+            document.getElementById('section-flashcard').classList.add('hidden');
+            document.getElementById('section-quiz').classList.add('hidden');
+            document.getElementById('section-progress').classList.add('hidden');
+
+            const tabs = ['flashcard', 'quiz', 'progress'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                btn.classList.remove('bg-[#222222]', 'text-white');
+                btn.classList.add('bg-[#1a1a1a]', 'text-gray-400');
+            });
+
+            document.getElementById(`section-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.classList.remove('bg-[#1a1a1a]', 'text-gray-400');
+            activeBtn.classList.add('bg-[#222222]', 'text-white');
+
+            const indicator = document.getElementById('active-indicator');
+            if (indicator) indicator.remove();
+
+            activeBtn.insertAdjacentHTML('beforeend', `<div id="active-indicator" class="absolute bottom-1 left-4 right-4 h-0.5 bg-blue-500 rounded-full"></div>`);
+
+            if (tabName === 'quiz') {
+                resetQuiz();
+            } else if (tabName === 'progress') {
+                updateStats();
+            }
+        }
+
+        // Карт эргүүлэх
+        function flipCard() {
+            document.getElementById('flashcard').classList.toggle('flipped');
+        }
+
+        function resetCardFlip() {
+            document.getElementById('flashcard').classList.remove('flipped');
+        }
+
+        // Картын мэдээллийг шинэчлэх
+        function updateFlashcard() {
+            if (words.length === 0) {
+                document.getElementById('word-kanji').innerText = "Үг олдсонгүй";
+                document.getElementById('word-kana').innerText = "";
+                document.getElementById('word-translation').innerText = "Хайлтын үр дүн хоосон байна.";
+                document.getElementById('word-tag').innerText = "-";
+                document.getElementById('word-example').innerText = "";
+                document.getElementById('word-counter').innerText = "Үг: 0 / 0";
+                return;
+            }
+
+            const current = words[currentIndex];
+            document.getElementById('word-kanji').innerText = current.kanji;
+            document.getElementById('word-kana').innerText = current.kana;
+            document.getElementById('word-translation').innerText = current.translation;
+            document.getElementById('word-tag').innerText = current.tag;
+            document.getElementById('word-example').innerText = current.example || "Жишээ байхгүй байна.";
+            
+            // Дугаар шинэчлэх
+            document.getElementById('word-counter').innerText = `Үг: ${currentIndex + 1} / ${words.length}`;
+            
+            // Үгийн одоогийн статусыг харуулах (Мэднэ / Мэдэхгүй)
+            const statusLabel = document.getElementById('current-word-status');
+            if (knownWords.includes(current.kanji)) {
+                statusLabel.innerText = "Мэднэ";
+                statusLabel.className = "bg-green-950/80 px-2 py-1 rounded-md text-green-400 font-bold border border-green-800";
+            } else if (unknownWords.includes(current.kanji)) {
+                statusLabel.innerText = "Мэдэхгүй";
+                statusLabel.className = "bg-red-950/80 px-2 py-1 rounded-md text-red-400 font-bold border border-red-800";
+            } else {
+                statusLabel.innerText = "Суралцаж буй";
+                statusLabel.className = "bg-[#2a2a2a] px-2 py-1 rounded-md text-blue-400 font-medium";
+            }
+
+            resetCardFlip();
+        }
+
+        // Дараах үг
+        function nextWord() {
+            if (words.length === 0) return;
+            currentIndex = (currentIndex + 1) % words.length;
+            updateFlashcard();
+        }
+
+        // Өмнөх үг
+        function prevWord() {
+            if (words.length === 0) return;
+            currentIndex = (currentIndex - 1 + words.length) % words.length;
+            updateFlashcard();
+        }
+
+        // Үгсийг холих
+        function shuffleWords() {
+            if (words.length === 0) return;
+            for (let i = words.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [words[i], words[j]] = [words[j], words[i]];
+            }
+            currentIndex = 0;
+            updateFlashcard();
+            const card = document.getElementById('flashcard');
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => { card.style.transform = ''; }, 200);
+        }
+
+        // Шүүлтүүр болон Хайлт хийх функц
+        function filterWords() {
+            const searchQuery = document.getElementById('search-input').value.toLowerCase();
+            const selectedCategory = document.getElementById('category-filter').value;
+
+            words = defaultWords.filter(w => {
+                const matchesSearch = w.kanji.toLowerCase().includes(searchQuery) || 
+                                      w.kana.toLowerCase().includes(searchQuery) || 
+                                      w.translation.toLowerCase().includes(searchQuery);
+                
+                const matchesCategory = selectedCategory === 'all' || w.tag === selectedCategory;
+
+                return matchesSearch && matchesCategory;
+            });
+
+            currentIndex = 0;
+            updateFlashcard();
+        }
+
+        // Мэднэ гэж тэмдэглэх
+        function markAsKnown() {
+            if (words.length === 0) return;
+            const current = words[currentIndex];
+            if (!knownWords.includes(current.kanji)) {
+                knownWords.push(current.kanji);
+                unknownWords = unknownWords.filter(w => w !== current.kanji);
+                saveState();
+            }
+            nextWord();
+        }
+
+        // Мэдэхгүй гэж тэмдэглэх
+        function markAsUnknown() {
+            if (words.length === 0) return;
+            const current = words[currentIndex];
+            if (!unknownWords.includes(current.kanji)) {
+                unknownWords.push(current.kanji);
+                knownWords = knownWords.filter(w => w !== current.kanji);
+                saveState();
+            }
+            nextWord();
+        }
+
+        // Алгасах
+        function skipWord() {
+            nextWord();
+        }
+
+        function saveState() {
+            localStorage.setItem('knownWords', JSON.stringify(knownWords));
+            localStorage.setItem('unknownWords', JSON.stringify(unknownWords));
+            updateStats();
+        }
+
+        function updateStats() {
+            const total = defaultWords.length;
+            const knownCount = knownWords.length;
+            const unknownCount = unknownWords.length;
+
+            document.getElementById('stats-total').innerText = total;
+            document.getElementById('stats-known').innerText = knownCount;
+            document.getElementById('stats-unknown').innerText = unknownCount;
+
+            const percent = total > 0 ? Math.round((knownCount / total) * 100) : 0;
+            document.getElementById('progress-percent').innerText = `${percent}%`;
+            document.getElementById('progress-bar-fill').style.width = `${percent}%`;
+        }
+
+        function clearProgress() {
+            if (confirm("Та явцаа үнэхээр устгах уу?")) {
+                knownWords = [];
+                unknownWords = [];
+                saveState();
+                filterWords(); // Өөрчлөлтийг шууд харуулах
+            }
+        }
+
+        // ================= QUIZ ЛОГИК =================
+        let quizIndex = 0;
+        let quizScore = 0;
+        let quizQuestions = [];
+
+        function resetQuiz() {
+            quizIndex = 0;
+            quizScore = 0;
+            quizQuestions = [...defaultWords].sort(() => 0.5 - Math.random()).slice(0, 5);
+            loadQuizQuestion();
+        }
+
+        function loadQuizQuestion() {
+            if (quizIndex >= quizQuestions.length) {
+                document.getElementById('quiz-question').innerText = "🎉 Дууслаа!";
+                document.getElementById('quiz-reading').innerText = `Та 5 асуултаас ${quizScore} оноо авлаа.`;
+                document.getElementById('quiz-options').innerHTML = '';
+                document.getElementById('quiz-progress').innerText = "Квиз дууссан";
+                return;
+            }
+
+            const current = quizQuestions[quizIndex];
+            document.getElementById('quiz-progress').innerText = `Асуулт ${quizIndex + 1} / ${quizQuestions.length}`;
+            document.getElementById('quiz-question').innerText = current.kanji;
+            document.getElementById('quiz-reading').innerText = current.kana;
+            document.getElementById('quiz-score').innerText = `Оноо: ${quizScore}`;
+
+            let options = [current.translation];
+            let remainingTranslations = defaultWords
+                .map(w => w.translation)
+                .filter(t => t !== current.translation);
+            
+            remainingTranslations.sort(() => 0.5 - Math.random());
+            for (let i = 0; i < 3 && i < remainingTranslations.length; i++) {
+                options.push(remainingTranslations[i]);
+            }
+
+            options.sort(() => 0.5 - Math.random());
+
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "py-3 px-5 rounded-xl border border-[#333333] bg-[#222222] hover:bg-[#2c2c2c] text-left transition text-base md:text-lg w-full flex justify-between items-center";
+                btn.innerHTML = `<span>${opt}</span>`;
+                btn.onclick = () => checkQuizAnswer(opt, current.translation, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkQuizAnswer(selected, correct, button) {
+            const buttons = document.getElementById('quiz-options').querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
+
+            if (selected === correct) {
+                quizScore++;
+                button.classList.add('bg-green-900', 'border-green-500', 'text-green-200');
+                button.innerHTML += ' <i class="fa-solid fa-check"></i>';
+            } else {
+                button.classList.add('bg-red-900', 'border-red-500', 'text-red-200');
+                button.innerHTML += ' <i class="fa-solid fa-xmark"></i>';
+                
+                buttons.forEach(btn => {
+                    if (btn.querySelector('span').innerText === correct) {
+                        btn.classList.add('bg-green-950', 'border-green-700', 'text-green-300');
+                        btn.innerHTML += ' <i class="fa-solid fa-check"></i>';
+                    }
+                });
+            }
+
+            document.getElementById('quiz-score').innerText = `Оноо: ${quizScore}`;
+
+            setTimeout(() => {
+                quizIndex++;
+                loadQuizQuestion();
+            }, 1200);
+        }
+    </script>
+</body>
+</html>
